@@ -1,47 +1,63 @@
+```groovy
 pipeline {
     agent any
+
     stages {
-        stage ('Checkout') {
+
+        stage('Checkout') {
             steps {
-                echo 'checking out source code ...'
+                echo 'Checking out source code...'
                 checkout scm
             }
-         }
+        }
 
-        stage ('installing dependencies') {
+        stage('Install Dependencies') {
             steps {
-                echo 'installing python dependencies ...'
-                sh '''
-                    python3 -m venv venv
-                    ./venv/bin/pip install --upgrade pip
-                    ./venv/bin/pip install -r requirements.txt
-                   
-                '''                
-            }
-         }
+                echo 'Installing Python dependencies...'
 
-        stage ('Test') {
+                dir('python-jenkins-cicd') {
+                    sh '''
+                        rm -rf venv
+                        python3 -m venv venv
+                        ./venv/bin/python -m pip install --upgrade pip
+                        ./venv/bin/pip install -r requirements.txt
+                    '''
+                }
+            }
+        }
+
+        stage('Test') {
             steps {
-                echo 'running test ...'
-                sh '''
-                    ./venv/bin/pytest -V
-                '''
-            }
-         }
+                echo 'Running tests...'
 
-         stage ('deploy') {
-             steps {
-                 echo 'deploying python applicaltion...'
-                 sh ''' 
-                     pkill -f "python.*app.py" || true
-                     nohup ./venv/bin/python app.py > app.log 2>&1 &
-                     sleep 3
-                     curl -f http://localhost:5000/health
-                 '''
-             }
-         }
-     }
-     post {
+                dir('python-jenkins-cicd') {
+                    sh '''
+                        ./venv/bin/pytest -v
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying Python application...'
+
+                dir('python-jenkins-cicd') {
+                    sh '''
+                        pkill -f "python.*app.py" || true
+
+                        nohup ./venv/bin/python app.py > app.log 2>&1 &
+
+                        sleep 3
+
+                        curl -f http://localhost:5000/health
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
         success {
             echo 'CI/CD Pipeline completed successfully!'
         }
@@ -51,3 +67,5 @@ pipeline {
         }
     }
 }
+```
+
