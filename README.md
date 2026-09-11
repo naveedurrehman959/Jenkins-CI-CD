@@ -1,2 +1,1 @@
-# Jenkins-CI-CD by me
-hello from git
+# Jenkins-CI-CD by git hub 
